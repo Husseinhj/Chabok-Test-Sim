@@ -7,16 +7,67 @@
 //
 
 import UIKit
+import AdpPushClient
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, PushClientManagerDelegate {
 
     var window: UIWindow?
 
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
+        
+        PushClientManager.setDevelopment(true)
+        //Reset badge and clear notification when app launched.
+        PushClientManager.resetBadge()
+        
+        PushClientManager.default()?.addDelegate(self)
+        
+        //Initialize with credential keys
+        let state = PushClientManager.default()?.registerApplication("chabok-starter",                    //based on your environment
+            apiKey: "70df4ae2e1fd03518ce3e3b21ee7ca7943577749",         //based on your environment
+            userName: "chabok-starter",  //based on your environment
+            password: "chabok-starter")  //based on your environment
+        
+        if state == true {
+            print("Initialized")
+        } else {
+            print("Not initialized")
+        }
+        
+        PushClientManager.default()?.enableLog = true
+        if PushClientManager.default()?.application(application, didFinishLaunchingWithOptions: launchOptions) == true {
+            print("Launched by tapping on notification")
+        }
+        
+        
+        if let userId = PushClientManager.default()?.userId {
+            PushClientManager.default()?.registerUser(userId)
+        } else {
+            PushClientManager.default()?.registerUser("USER_ID")
+        }
+        
+        
         return true
+    }
+    
+    //MARK : Notification AppDelegation
+    
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        // Handle failure of get Device token from Apple APNS Server
+        PushClientManager.default()?.application(application, didFailToRegisterForRemoteNotificationsWithError: error)
+    }
+    
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        // Handle receive Device Token From APNS Server
+        PushClientManager.default()?.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)
+    }
+    
+    @available(iOS 8.0, *)
+    func application(_ application: UIApplication, didRegister notificationSettings: UIUserNotificationSettings) {
+        // Handle iOS 8 remote Notificaiton Settings
+        PushClientManager.default()?.application(application, didRegister: notificationSettings)
     }
 
     func applicationWillResignActive(_ application: UIApplication) {
